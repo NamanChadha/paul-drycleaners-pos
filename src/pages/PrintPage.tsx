@@ -65,7 +65,7 @@ export function PrintPage() {
         </div>
         <div className="row">
           <button className="button primary" onClick={printReceipt} disabled={isPrinting}>
-            <Printer size={16} /> {isPrinting ? 'Preparing print…' : 'Print on Pre-printed Form'}
+            <Printer size={16} /> {isPrinting ? 'Preparing print…' : 'Print A5 Receipt'}
           </button>
           <button className="button" onClick={savePdf}>
             <Download size={16} /> Save PDF Preview
@@ -80,11 +80,9 @@ export function PrintPage() {
       <div className="print-form-tip card">
         <Info size={16} style={{ color: '#2563eb', flexShrink: 0, marginTop: 1 }} />
         <div>
-          <strong>Pre-printed Form Mode</strong>
+          <strong>A5 receipt format</strong>
           <p className="muted" style={{ marginTop: 3 }}>
-            Place your Paul Drycleaners receipt pad in the laser printer, then click <strong>Print on Pre-printed Form</strong>.
-            Only the receipt number, dates, customer details, item rows, quantities, line amounts, and total are printed — the pre-printed logo, borders, labels, times, and notes stay untouched.
-            If the data lands slightly off, use the receipt offset values in Settings to calibrate it.
+            Select A5 paper and portrait orientation in the printer dialog. The complete receipt layout, including current item delivery markings, prints exactly as shown in the preview.
           </p>
         </div>
       </div>

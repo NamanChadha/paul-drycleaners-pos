@@ -49,7 +49,8 @@ label { display: grid; gap: 8px; }
 .compact-stack { gap: 12px; }
 .compact-card { padding: 14px; }
 .returning-customer { margin-bottom: 12px; padding: 9px 11px; border-radius: 10px; background: #eff6ff; color: #1d4ed8; font-size: 13px; font-weight: 650; }
-.compact-form-grid { display: grid; grid-template-columns: 180px 220px 1fr; gap: 10px; }
+.compact-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.compact-form-grid > label { min-width: 0; }
 .compact-form-grid label { gap: 5px; font-size: 13px; }
 .compact-form-grid input { padding: 9px 10px; }
 .address-field { grid-column: auto; }
@@ -90,6 +91,10 @@ label { display: grid; gap: 8px; }
 .delivery-action { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .backup-card { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .backup-card p:last-child { color: #78716c; margin-top: 4px; }
+.settings-save-note { color: #57534e; margin-top: -8px; }
+.settings-fields { border: 1px solid #e7e5e4; }
+.settings-fields:disabled { opacity: .76; }
+.settings-fields:disabled input { background: #f5f5f4; color: #57534e; cursor: not-allowed; }
 .hidden-input { display: none; }
 .frequent-list { display: grid; }
 .frequent-list > div { display: grid; grid-template-columns: minmax(140px, 1fr) 120px 140px; gap: 12px; padding: 11px 0; border-top: 1px solid #e7e5e4; }
@@ -200,76 +205,96 @@ label { display: grid; gap: 8px; }
 
 /* Header */
 .receipt-top-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2px; }
-.receipt-header-left { font-size: 11px; font-weight: 700; color: #004b93; line-height: 1.3; width: 33%; }
+.receipt-header-left { font-size: 11px; font-weight: 700; color: #004b93; line-height: 1.3; width: 32%; }
+.header-address-row { display: flex; align-items: flex-start; gap: 4px; }
+.header-pin-icon { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
 .shop-address-line { margin: 0; }
 .shop-address-city { margin: 0; font-weight: 800; }
 
-.receipt-brand-center { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 34%; }
+.receipt-brand-center { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 36%; }
 .brand-logo-container { display: flex; flex-direction: column; align-items: center; position: relative; }
-.coat-hanger-icon { width: 64px; height: 44px; display: block; }
-.brand-wordmark-wrap { margin-top: -20px; z-index: 2; }
+.coat-hanger-icon { width: 60px; height: 50px; display: block; }
+.brand-wordmark-wrap { margin-top: -16px; z-index: 2; }
 .brand-paul-text {
   font-family: "Brush Script MT", "Dancing Script", cursive;
-  font-size: 40px;
+  font-size: 38px;
   font-weight: 900;
   color: #d81d24;
   line-height: 1;
   text-shadow: 1.5px 1.5px 0 #fff, -1.5px -1.5px 0 #fff, 1.5px -1.5px 0 #fff, -1.5px 1.5px 0 #fff;
   letter-spacing: -1px;
 }
-.brand-diamonds { color: #d81d24; font-size: 10px; letter-spacing: 2.5px; line-height: 1; margin-top: -3px; }
+.brand-diamonds { color: #d81d24; font-size: 10px; letter-spacing: 2.5px; line-height: 1; margin-top: -2px; }
 .brand-drycleaners-text {
   font-family: Arial, sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   font-style: italic;
   color: #003e82;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   line-height: 1;
-  margin-top: 3px;
+  margin-top: 2px;
+}
+.brand-since-text {
+  font-family: Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  color: #003e82;
+  letter-spacing: 1.5px;
+  margin-top: 2px;
 }
 
 .header-vertical-sep { width: 2px; height: 50px; background: #004b93; }
 
-.receipt-header-right { font-size: 14px; font-weight: 800; color: #004b93; text-align: right; line-height: 1.35; width: 33%; }
+.receipt-header-right { font-size: 13px; font-weight: 800; color: #004b93; text-align: right; line-height: 1.35; width: 32%; }
+.header-phone-row { display: flex; align-items: flex-start; gap: 4px; justify-content: flex-end; }
+.header-phone-icon { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
 .shop-phone-no { margin: 0; }
 
 /* Meta Strip (Receipt No, Date of Receipt, Date of Delivery) */
 .receipt-meta-strip { display: flex; gap: 7px; align-items: stretch; }
-.meta-receipt-no-box { display: flex; border: 2px solid #004b93; border-radius: 8px; overflow: hidden; height: 44px; }
+.meta-receipt-no-box { display: flex; border: 2px solid #004b93; border-radius: 8px; overflow: hidden; height: 48px; }
 .receipt-no-label { background: #003e82; color: #fff; padding: 4px 8px; font-size: 11px; font-weight: 800; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; line-height: 1.1; }
 .receipt-no-val { background: #fff; color: #000; font-size: 20px; font-weight: 900; padding: 4px 12px; display: flex; align-items: center; justify-content: center; min-width: 55px; }
 
-.meta-date-box { flex: 1; background: #e1edfa; border: 1.5px solid #bdd7f1; border-radius: 8px; padding: 4px 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
-.meta-box-title { font-size: 10px; font-weight: 800; color: #004b93; letter-spacing: 0.5px; }
-.meta-date-value { font-size: 12px; font-weight: 700; color: #111; margin-top: 2px; }
+.meta-date-box { flex: 1; background: #e1edfa; border: 1.5px solid #bdd7f1; border-radius: 8px; padding: 3px 6px; text-align: center; display: flex; flex-direction: column; justify-content: center; }
+.meta-box-header { display: flex; align-items: center; justify-content: center; gap: 3px; }
+.meta-box-title { font-size: 9.5px; font-weight: 800; color: #004b93; letter-spacing: 0.4px; }
+.meta-date-value { font-size: 11.5px; font-weight: 700; color: #111; margin-top: 2px; }
 .date-slot { font-weight: 800; }
-.meta-time-subline { font-size: 10px; color: #004b93; font-weight: 600; margin-top: 1px; }
+.meta-delivery-box .meta-time-subline { display: flex; align-items: center; justify-content: center; }
+.meta-time-subline { font-size: 9.5px; color: #004b93; font-weight: 600; margin-top: 1px; }
+.time-val { font-weight: 800; margin-left: 2px; }
 
 /* Customer Info Box */
-.customer-info-box { border: 2px solid #00569e; border-radius: 8px; padding: 7px 10px; display: grid; gap: 7px; }
+.customer-info-box { border: 2px solid #00569e; border-radius: 8px; padding: 7px 10px; display: grid; gap: 6px; }
 .cust-info-row { display: flex; gap: 14px; }
-.cust-field { display: flex; align-items: baseline; flex: 1; gap: 6px; }
+.cust-field { display: flex; align-items: center; flex: 1; gap: 4px; }
+.address-field-receipt { display: flex; align-items: center; flex: 1; gap: 4px; }
 .field-label { font-size: 12px; font-weight: 800; color: #004b93; white-space: nowrap; }
 .field-value { font-size: 12px; font-weight: 700; color: #000; z-index: 1; }
-.dotted-line { flex: 1; border-bottom: 1px dotted #888; height: 1px; align-self: baseline; min-width: 20px; }
+.dotted-line { flex: 1; border-bottom: 1px dotted #888; height: 1px; align-self: center; min-width: 20px; }
 
 /* Table */
-.receipt-table-box { border: 2px solid #00569e; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; flex: 1; min-height: 250px; }
-.table-header-row { display: flex; background: #d8e9f8; border-bottom: 2px solid #00569e; font-size: 12px; font-weight: 800; color: #004b93; }
-.col-particulars { flex: 1; padding: 5px 8px; text-align: center; border-right: 2px solid #00569e; }
+.receipt-table-box { border: 2px solid #00569e; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; flex: 1; min-height: 200px; }
+.table-header-row { display: flex; background: #003e82; border-bottom: 2px solid #00569e; font-size: 11px; font-weight: 800; color: #fff; }
+.table-header-row .col-particulars { display: flex; align-items: center; justify-content: center; gap: 4px; }
+.table-header-row .col-qty { display: flex; align-items: center; justify-content: center; gap: 3px; flex-direction: column; }
+.table-header-row .col-amount { display: flex; align-items: center; justify-content: center; line-height: 1.1; }
+.col-particulars { flex: 1; padding: 6px 8px; text-align: center; border-right: 2px solid #00569e; }
 .col-qty { width: 55px; padding: 5px; text-align: center; border-right: 2px solid #00569e; }
 .col-amount { width: 85px; padding: 5px; text-align: center; line-height: 1.1; }
 
 .table-body-area { display: flex; flex-direction: column; flex: 1; }
-.table-item-row { display: flex; font-size: 12px; border-bottom: 1px solid #e2e8f0; }
-.table-item-row .col-particulars { text-align: left; display: flex; flex-direction: column; justify-content: center; border-right: 2px solid #00569e; padding: 5px 8px; }
+.table-item-row { display: flex; font-size: 12px; border-bottom: 1px solid #c7d9f0; min-height: 18px; }
+.table-item-row .col-particulars { text-align: left; display: flex; flex-direction: column; justify-content: center; border-right: 2px solid #00569e; padding: 4px 8px; }
 .garment-main-title { font-weight: 700; color: #000; }
 .service-subtext { font-size: 11px; color: #475569; font-weight: 500; }
 .item-delivered-tag { font-size: 10px; color: #15803d; font-weight: 700; margin-top: 1px; }
 .table-item-row .col-qty { font-weight: 700; display: flex; align-items: center; justify-content: center; border-right: 2px solid #00569e; width: 55px; }
 .table-item-row .col-amount { font-weight: 700; text-align: right; padding-right: 8px; display: flex; align-items: center; justify-content: flex-end; width: 85px; }
-.blank-row { flex: 1; border-bottom: none; }
+.blank-row { flex: 1; border-bottom: 1px solid #c7d9f0 !important; }
+.blank-row:last-child { border-bottom: none !important; }
 
 /* Bottom Row: Notes & Total Amount */
 .receipt-bottom-strip { display: flex; gap: 8px; align-items: stretch; }
@@ -288,21 +313,23 @@ label { display: grid; gap: 8px; }
 
 /* Footer */
 .receipt-footer { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
-.footer-left { display: flex; align-items: center; gap: 6px; }
+.footer-left { display: flex; align-items: center; gap: 8px; }
 .thank-you-script {
   font-family: "Brush Script MT", "Dancing Script", cursive;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
   color: #d81d24;
   font-style: italic;
   line-height: 1;
 }
 .footer-pipe { font-size: 22px; color: #004b93; font-weight: 300; }
-.trusted-care-block { display: flex; flex-direction: column; font-size: 9px; font-weight: 900; color: #004b93; letter-spacing: 0.5px; line-height: 1.1; }
-.footer-diamonds { color: #d81d24; font-size: 11px; letter-spacing: 2px; }
+.footer-center-block { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.footer-shirt-icon { width: 36px; height: 30px; display: block; }
+.trusted-care-block { display: flex; flex-direction: column; align-items: center; font-size: 8.5px; font-weight: 900; color: #004b93; letter-spacing: 0.5px; line-height: 1.2; }
+.footer-diamonds { color: #d81d24; font-size: 10px; letter-spacing: 3px; }
 
-.footer-right { text-align: center; width: 140px; }
-.sig-dotted-line { border-bottom: 1px dotted #004b93; margin-bottom: 3px; }
+.footer-right { text-align: center; width: 130px; }
+.sig-dotted-line { border-bottom: 1px solid #004b93; margin-bottom: 3px; }
 .sig-label { font-size: 11px; font-weight: 600; color: #004b93; }
 
 @media (max-width: 900px) {
@@ -327,12 +354,11 @@ label { display: grid; gap: 8px; }
   .official-receipt { width: 100%; min-height: auto; padding: 10px; }
 }
 
-/* Print Overlay Data Positioning */
-/* Screen: hide the print overlay, show the full visual receipt */
+/* Screen: hide the old data-only overlay, show the full styled receipt. */
 .print-overlay-receipt { display: none; }
 .screen-only-receipt { display: block; }
 
-/* Laser Print Styles */
+/* ── Print: render the live A5 preview exactly as shown on screen ── */
 @page {
   size: A5 portrait;
   margin: 0mm;
@@ -351,212 +377,48 @@ label { display: grid; gap: 8px; }
     height: 210mm !important;
     overflow: hidden !important;
   }
-  /* Hide EVERYTHING on the page */
+
+  /* Hide every element on the page first */
   body * { visibility: hidden !important; }
 
-  /* Show only the print overlay */
-  #receipt-print-area,
-  #receipt-print-area * {
+  /* Then reveal only the A5 preview container and everything inside it */
+  .a5-preview-container,
+  .a5-preview-container * {
     visibility: visible !important;
   }
 
-  /* Hide the full visual receipt when printing */
-  .screen-only-receipt { display: none !important; }
+  /* Position the container to fill the whole A5 page */
+  .a5-preview-container {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 148mm !important;
+    height: 210mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
 
-  /* Garment tags belong to their own workflow and must never accompany a receipt. */
+  /* The receipt sheet itself */
+  .screen-only-receipt {
+    display: block !important;
+    width: 148mm !important;
+    min-height: 210mm !important;
+    margin: 0 !important;
+    padding: 5mm !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  .receipt-border-frame { min-height: 198mm !important; }
+
+  /* Ensure the old overlay and tag areas are hidden */
+  #receipt-print-area,
   #tag-print-area,
   .tag-grid,
   .tag-card {
     display: none !important;
   }
-
-  /* The print overlay: full A5 page, no margin, transparent bg */
-  #receipt-print-area {
-    display: block !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 148mm !important;
-    height: 210mm !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    transform: translate(var(--receipt-offset-left, 0mm), var(--receipt-offset-top, 0mm)) !important;
-    transform-origin: top left !important;
-  }
-
-  /* ── Data field positions (calibrated to Paul Drycleaners pre-printed A5 pad) ── */
-  /* Receipt Number — sits in the white box to the right of "RECEIPT NO." label */
-  .po-receipt-no {
-    position: absolute !important;
-    top: 43.5mm !important;
-    left: 43mm !important;
-    font-size: 13pt !important;
-    font-weight: 900 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    letter-spacing: 0.5mm !important;
-  }
-
-  /* Date of Receipt fields */
-  .po-date-receipt {
-    position: absolute !important;
-    top: 46.5mm !important;
-    left: 65.5mm !important;
-    font-size: 9.5pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    display: flex !important;
-    gap: 0 !important;
-    align-items: center !important;
-  }
-  .po-time-receipt {
-    position: absolute !important;
-    top: 48mm !important;
-    left: 71mm !important;
-    font-size: 8.5pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-  }
-
-  /* Date of Delivery fields */
-  .po-date-delivery {
-    position: absolute !important;
-    top: 46.2mm !important;
-    left: 105mm !important;
-    font-size: 9.5pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    display: flex !important;
-    gap: 0 !important;
-    align-items: center !important;
-  }
-  .po-time-delivery {
-    position: absolute !important;
-    top: 48mm !important;
-    left: 111mm !important;
-    font-size: 8.5pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-  }
-
-  /* Customer name — after "Name :" label */
-  .po-name {
-    position: absolute !important;
-    top: 60mm !important;
-    left: 29mm !important;
-    font-size: 9pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    max-width: 65mm !important;
-  }
-
-  /* Customer phone — after "Phone :" label */
-  .po-phone {
-    position: absolute !important;
-    top: 60mm !important;
-    left: 104.5mm !important;
-    font-size: 9pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    max-width: 40mm !important;
-  }
-
-  /* Customer address */
-  .po-address {
-    position: absolute !important;
-    top: 67mm !important;
-    left: 27mm !important;
-    font-size: 9pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    max-width: 110mm !important;
-  }
-
-  /* Items area — starts below the pre-printed PARTICULARS / QTY / AMOUNT header. */
-  .po-items-area {
-    position: absolute !important;
-    top: 86mm !important;
-    left: 0 !important;
-    width: 148mm !important;
-  }
-  .po-item-row {
-    display: flex !important;
-    width: 100% !important;
-    height: 6mm !important;
-    align-items: center !important;
-    padding: 0 !important;
-  }
-  .po-item-particulars {
-    position: absolute !important;
-    left: 12.5mm !important;
-    font-size: 8.5pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    max-width: 104mm !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-  .po-item-qty {
-    position: absolute !important;
-    left: 100mm !important;
-    font-size: 8.5pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    text-align: center !important;
-    width: 10mm !important;
-  }
-  .po-item-amount {
-    position: absolute !important;
-    right: 14mm !important;
-    font-size: 8.5pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    text-align: right !important;
-    width: 20mm !important;
-  }
-
-  /* Notes */
-  .po-notes {
-    position: absolute !important;
-    top: 169mm !important;
-    left: 18mm !important;
-    font-size: 8.5pt !important;
-    font-weight: 700 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    max-width: 75mm !important;
-  }
-
-  /* Total Amount */
-  .po-total {
-    position: absolute !important;
-    top: 171mm !important;
-    right: 16mm !important;
-    font-size: 11pt !important;
-    font-weight: 900 !important;
-    font-family: Arial, sans-serif !important;
-    color: #000 !important;
-    text-align: right !important;
-    width: 24mm !important;
-  }
-
-  /* Date parts spacing helpers */
-  .po-date-dd, .po-date-mm, .po-date-yy { font-weight: 900 !important; text-align: center !important; }
-  .po-date-dd, .po-date-mm { width: 7mm !important; }
-  .po-date-yy { width: 8mm !important; margin-left: 4mm !important; }
-  .po-date-sep { color: transparent !important; width: 2mm !important; }
 }
