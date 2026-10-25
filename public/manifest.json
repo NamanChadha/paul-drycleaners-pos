@@ -1,0 +1,16 @@
+{
+  "name": "Paul Drycleaners POS System",
+  "short_name": "Paul Drycleaners",
+  "description": "Counter-first management and billing system for Paul Drycleaners",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e3a8a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
