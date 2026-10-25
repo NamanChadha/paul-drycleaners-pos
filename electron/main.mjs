@@ -1,7 +1,10 @@
 import { app, BrowserWindow, dialog, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createPosServer } from '../server.mjs'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 let server
 let mainWindow
@@ -21,20 +24,30 @@ async function startLocalServer() {
 }
 
 function createWindow(url) {
+  // Resolve icon — works both in dev and when packaged
+  const iconPath = app.isPackaged
+    ? join(process.resourcesPath, 'app', 'build', 'icon.png')
+    : join(__dirname, '..', 'build', 'icon.png')
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 1024,
     minHeight: 680,
     title: 'Paul Drycleaners POS',
+    icon: iconPath,
     backgroundColor: '#f7f4ef',
+    autoHideMenuBar: true,  // hides the File/Edit/View menu bar; press Alt to show
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
     },
   })
+
+  mainWindow.maximize()
   mainWindow.loadURL(url)
+
   mainWindow.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
     if (targetUrl.startsWith('https:')) void shell.openExternal(targetUrl)
     return { action: 'deny' }
