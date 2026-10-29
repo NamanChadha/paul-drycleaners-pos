@@ -16,15 +16,45 @@ export function OrdersPage() {
     setExpandedOrders((prev) => ({ ...prev, [orderId]: !prev[orderId] }))
   }
 
-  const filtered = useMemo(
-    () =>
-      orders.filter((order) => {
-        const customer = customers.find((entry) => entry.id === order.customerId)
-        const text = `${order.orderNumber} ${customer?.name ?? ''} ${customer?.phone ?? ''}`.toLowerCase()
-        return text.includes(query.toLowerCase()) && (status === 'all' || order.status === status)
-      }),
-    [orders, customers, query, status],
-  )
+  const filtered = useMemo(() => {
+    const rawQuery = query.trim().toLowerCase()
+    if (!rawQuery && status === 'all') return orders
+
+    // Split search input into tokens to support flexible, order-independent search
+    const tokens = rawQuery
+      .split(/\s+/)
+      .map((t) => t.replace(/^#/, ''))
+      .filter(Boolean)
+
+    return orders.filter((order) => {
+      if (status !== 'all' && order.status !== status) return false
+      if (tokens.length === 0) return true
+
+      const customer = customers.find((entry) => entry.id === order.customerId)
+      const orderItems = items.filter((item) => item.orderId === order.id)
+      const itemsText = orderItems
+        .map((it) => `${it.garmentType} ${it.serviceType}`)
+        .join(' ')
+
+      const searchableBlob = [
+        String(order.orderNumber),
+        `#${order.orderNumber}`,
+        `order #${order.orderNumber}`,
+        `order ${order.orderNumber}`,
+        customer?.name ?? '',
+        customer?.phone ?? '',
+        customer?.address ?? '',
+        order.status,
+        order.notes ?? '',
+        itemsText,
+      ]
+        .join(' ')
+        .toLowerCase()
+
+      // Every search token must match anywhere in the searchable text (100% case-insensitive)
+      return tokens.every((token) => searchableBlob.includes(token))
+    })
+  }, [orders, customers, items, query, status])
 
   const changeStatus = (orderId: string, nextStatus: 'pending' | 'ready' | 'delivered') => {
     if (nextStatus !== 'delivered') return updateOrderStatus(orderId, nextStatus)

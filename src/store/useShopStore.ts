@@ -11,9 +11,10 @@ interface ShopState {
   items: Item[]
   payments: Payment[]
   settings: Settings
-  addOrUpdateCustomer: (input: Omit<Customer, 'id' | 'createdAt' | 'totalDue'>) => Customer
+  addOrUpdateCustomer: (input: { id?: string; name: string; phone: string; address: string }) => Customer
+  updateCustomer: (id: string, patch: Partial<Pick<Customer, 'name' | 'phone' | 'address'>>) => void
   createOrder: (input: {
-    customer: Omit<Customer, 'id' | 'createdAt' | 'totalDue'>
+    customer: { id?: string; name: string; phone: string; address: string }
     deliveryDate?: string
     paidAmount: number
     notes: string
@@ -127,23 +128,89 @@ export const useShopStore = create<ShopState>()(
       payments: [],
       settings: seedSettings,
       addOrUpdateCustomer: (input) => {
-        const normalizedPhone = input.phone.replace(/\D/g, '')
-        const existing = get().customers.find((customer) => customer.phone.replace(/\D/g, '') === normalizedPhone)
-        if (existing) {
-          const updated = { ...existing, ...input }
-          set((state) => ({
-            customers: state.customers.map((customer) => (customer.id === existing.id ? updated : customer)),
-          }))
-          return updated
+        const normalizedPhone = (input.phone || '').replace(/\D/g, '')
+        const hasPhone = normalizedPhone.length >= 7
+
+        // 1. If explicit ID provided, find and update by ID
+        if (input.id) {
+          const existingById = get().customers.find((customer) => customer.id === input.id)
+          if (existingById) {
+            const updated: Customer = {
+              ...existingById,
+              name: input.name?.trim() || existingById.name,
+              phone: input.phone !== undefined ? input.phone.trim() : existingById.phone,
+              address: input.address !== undefined ? input.address.trim() : existingById.address,
+            }
+            set((state) => ({
+              customers: state.customers.map((c) => (c.id === existingById.id ? updated : c)),
+            }))
+            return updated
+          }
         }
+
+        // 2. If phone is provided, match by phone
+        if (hasPhone) {
+          const existingByPhone = get().customers.find(
+            (customer) => customer.phone.replace(/\D/g, '') === normalizedPhone,
+          )
+          if (existingByPhone) {
+            const updated: Customer = {
+              ...existingByPhone,
+              name: input.name?.trim() || existingByPhone.name,
+              phone: input.phone.trim(),
+              address: input.address?.trim() || existingByPhone.address,
+            }
+            set((state) => ({
+              customers: state.customers.map((c) => (c.id === existingByPhone.id ? updated : c)),
+            }))
+            return updated
+          }
+        }
+
+        // 3. Fallback: match by non-empty name if phone is not present
+        const trimmedName = (input.name || '').trim()
+        if (trimmedName && !hasPhone) {
+          const existingByName = get().customers.find(
+            (c) => c.name.trim().toLowerCase() === trimmedName.toLowerCase() && !c.phone.replace(/\D/g, ''),
+          )
+          if (existingByName) {
+            const updated: Customer = {
+              ...existingByName,
+              address: input.address?.trim() || existingByName.address,
+            }
+            set((state) => ({
+              customers: state.customers.map((c) => (c.id === existingByName.id ? updated : c)),
+            }))
+            return updated
+          }
+        }
+
+        // 4. Create new customer
+        const fallbackName = trimmedName || (input.phone?.trim() ? `Customer (${input.phone.trim()})` : input.address?.trim() ? `Customer (${input.address.trim().slice(0, 20)})` : 'Walk-in Customer')
         const customer: Customer = {
           id: id(),
-          ...input,
+          name: fallbackName,
+          phone: input.phone?.trim() || '',
+          address: input.address?.trim() || '',
           totalDue: 0,
           createdAt: new Date().toISOString(),
         }
         set((state) => ({ customers: [customer, ...state.customers] }))
         return customer
+      },
+      updateCustomer: (idToUpdate, patch) => {
+        set((state) => ({
+          customers: state.customers.map((customer) =>
+            customer.id === idToUpdate
+              ? {
+                  ...customer,
+                  name: patch.name !== undefined ? patch.name.trim() : customer.name,
+                  phone: patch.phone !== undefined ? patch.phone.trim() : customer.phone,
+                  address: patch.address !== undefined ? patch.address.trim() : customer.address,
+                }
+              : customer,
+          ),
+        }))
       },
       createOrder: ({ customer: customerInput, deliveryDate, paidAmount, notes, items }) => {
         const customer = get().addOrUpdateCustomer(customerInput)
