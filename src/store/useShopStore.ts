@@ -20,6 +20,8 @@ interface ShopState {
     notes: string
     items: DraftItem[]
   }) => Order
+  updateOrder: (orderId: string, input: { customer: { id?: string; name: string; phone: string; address: string }; deliveryDate: string; notes: string; items: DraftItem[] }) => void
+  cancelOrder: (orderId: string) => void
   updateOrderStatus: (orderId: string, status: OrderStatus, handover?: { deliveredBy: string; deliveryNote: string }) => void
   toggleItemDelivery: (itemId: string, deliveredBy?: string) => void
   recordPayment: (input: Omit<Payment, 'id' | 'createdAt'>) => void
@@ -106,6 +108,9 @@ const seedSettings: Settings = {
     'Blanket Single', 'Blanket Double', 'Curtains', 'Bed Sheets Single', 'Bed Sheets Double', 'Hand Bag',
     'Backpack', 'trolley', 'Blinds', 'Carpets', 'Quilt Single', 'Quilt Double',
   ],
+  garmentCategories: {
+    'Suit 2pc.': "Men's", 'Suit 3pc.': "Men's", Coat: "Men's", Pant: "Men's", 'J/Jacket': "Men's", Kurta: "Men's", 'Sweat Shirt': "Men's", 'Sweater HS': "Men's", lower: "Men's", Jackets: "Men's", 'Half Jacket': "Men's", 'Leather Jacket': "Men's", 'suede jacket': "Men's", 'Gents Shawl': "Men's", Shirts: "Men's", 'Sherwani Indo Western': "Men's", 'Over Coat': "Men's", 'Pair of Shoes': "Men's", 'ladiesSuit 2pc': "Women's", 'Bridal Lehanga': "Women's", 'Ladies Suit 3pc': "Women's", Saree: "Women's", Blouse: "Women's", 'Ladies Overcoat': "Women's", Dupatta: "Women's", Sharara: "Women's", 'sharara shirt 2pc': "Women's", 'sharara shirt 3pc': "Women's", Dress: "Women's", 'Ladies Shirt': "Women's", 'Shirt(L)': "Women's", parallel: "Women's", 'Ladies Top': "Women's"
+  },
   quickAddItems: ['Shirts', 'Pant', 'Suit 2pc.', 'Saree'],
   nextOrderNumber: 1,
   receiptOffsets: { top: 0, left: 0 },
@@ -185,8 +190,15 @@ export const useShopStore = create<ShopState>()(
           }
         }
 
-        // 4. Create new customer
-        const fallbackName = trimmedName || (input.phone?.trim() ? `Customer (${input.phone.trim()})` : input.address?.trim() ? `Customer (${input.address.trim().slice(0, 20)})` : 'Walk-in Customer')
+        // 4. Match address-only customers when no name or phone is supplied
+        const trimmedAddress = (input.address || '').trim()
+        if (!trimmedName && !hasPhone && trimmedAddress) {
+          const existingByAddress = get().customers.find((c) => c.address.trim().toLowerCase() === trimmedAddress.toLowerCase())
+          if (existingByAddress) return existingByAddress
+        }
+
+        // 5. Create new customer
+        const fallbackName = trimmedName || (input.phone?.trim() ? `Customer (${input.phone.trim()})` : '')
         const customer: Customer = {
           id: id(),
           name: fallbackName,
@@ -269,6 +281,50 @@ export const useShopStore = create<ShopState>()(
         }))
         return order
       },
+      updateOrder: (orderId, input) => {
+        const state = get()
+        const existing = state.orders.find((order) => order.id === orderId)
+        if (!existing || existing.status === 'cancelled') return
+        const customer = state.addOrUpdateCustomer({ ...input.customer, id: input.customer.id || existing.customerId })
+        const oldItems = state.items.filter((item) => item.orderId === orderId)
+        const oldDue = existing.dueAmount
+        const totalAmount = input.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+        const paidAmount = Math.min(existing.paidAmount, totalAmount)
+        const dueAmount = Math.max(totalAmount - paidAmount, 0)
+        const nextItems: Item[] = input.items.map((draft, index) => {
+          const previous = oldItems[index]
+          return {
+            ...draft, id: previous?.id ?? id(), orderId, itemNo: index + 1,
+            totalPrice: draft.quantity * draft.unitPrice,
+            tagCode: previous?.tagCode ?? `${existing.orderNumber}-${index + 1}`,
+            isDelivered: previous?.isDelivered ?? false,
+            deliveredAt: previous?.deliveredAt,
+            deliveredBy: previous?.deliveredBy,
+          }
+        })
+        set((current) => ({
+          orders: current.orders.map((order) => order.id === orderId ? {
+            ...order, customerId: customer.id, deliveryDate: input.deliveryDate,
+            notes: input.notes, totalAmount, paidAmount, dueAmount,
+            paymentStatus: paymentStatus(paidAmount, totalAmount),
+            status: nextItems.length > 0 && nextItems.every((item) => item.isDelivered) ? 'delivered' : (order.status === 'delivered' ? 'ready' : order.status),
+          } : order),
+          items: [...nextItems, ...current.items.filter((item) => item.orderId !== orderId)],
+          customers: current.customers.map((entry) => entry.id === existing.customerId && entry.id === customer.id
+            ? { ...entry, totalDue: Math.max(0, entry.totalDue - oldDue + dueAmount) }
+            : entry.id === existing.customerId ? { ...entry, totalDue: Math.max(0, entry.totalDue - oldDue) }
+            : entry.id === customer.id ? { ...entry, totalDue: entry.totalDue + dueAmount } : entry),
+        }))
+      },
+      cancelOrder: (orderId) => set((state) => {
+        const order = state.orders.find((entry) => entry.id === orderId)
+        if (!order || order.status === 'cancelled') return state
+        return {
+          orders: state.orders.map((entry) => entry.id === orderId ? { ...entry, status: 'cancelled' } : entry),
+          customers: state.customers.map((customer) => customer.id === order.customerId
+            ? { ...customer, totalDue: Math.max(0, customer.totalDue - order.dueAmount) } : customer),
+        }
+      }),
       updateOrderStatus: (orderId, status, handover) => {
         const nowIso = new Date().toISOString()
         set((state) => {
@@ -423,6 +479,7 @@ export const useShopStore = create<ShopState>()(
                     .map((service) => (service === 'Press' ? 'Steam Press' : service))
                 : seedSettings.serviceTypes),
             garmentTypes: [...new Set([...seedSettings.garmentTypes, ...(persisted?.settings?.garmentTypes ?? []).filter((type) => !['Shirt', 'Suit'].includes(type))])],
+            garmentCategories: { ...seedSettings.garmentCategories, ...(persisted?.settings?.garmentCategories ?? {}) },
             quickAddItems: [...new Set((persisted?.settings?.quickAddItems ?? seedSettings.quickAddItems).filter(Boolean))],
             garmentPrices: {
               ...Object.fromEntries(Object.entries(persisted?.settings?.garmentPrices ?? {}).filter(([name]) => !['Shirt', 'Suit', 'Saree', 'Pant'].includes(name))),

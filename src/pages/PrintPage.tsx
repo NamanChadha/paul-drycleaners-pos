@@ -34,7 +34,7 @@ export function PrintPage() {
   }
 
   const sendDeliveryConfirmation = () => {
-    window.open(buildWhatsAppDeliveryUrl(customer, order, settings), '_blank', 'noopener,noreferrer')
+    window.open(buildWhatsAppDeliveryUrl(customer, order, settings, orderItems), '_blank', 'noopener,noreferrer')
   }
 
   const printReceipt = () => {

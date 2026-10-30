@@ -7,7 +7,7 @@ import { formatMoney } from '../utils/money'
 import { buildWhatsAppDeliveryUrl } from '../utils/whatsapp'
 
 export function OrdersPage() {
-  const { orders, customers, items, settings, updateOrderStatus, toggleItemDelivery, recordPayment } = useShopStore()
+  const { orders, customers, items, settings, updateOrderStatus, toggleItemDelivery, recordPayment, cancelOrder } = useShopStore()
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({})
@@ -87,6 +87,7 @@ export function OrdersPage() {
           <option value="pending">Pending</option>
           <option value="ready">Ready</option>
           <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </div>
 
@@ -110,7 +111,8 @@ export function OrdersPage() {
                   <div className="order-header-info">
                     <span className="order-number-badge">#{order.orderNumber}</span>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '16px' }}>{customer?.name || 'Walk-in Customer'}</h3>
+                      <h3 style={{ margin: 0, fontSize: '16px' }}>{customer?.name && !customer.name.startsWith('Customer (') ? customer.name : customer?.address || 'Walk-in Customer'}</h3>
+                      {customer?.name && !customer.name.startsWith('Customer (') && customer.address && <p className="muted" style={{ margin: '2px 0', fontSize: '12px' }}>{customer.address}</p>}
                       <p className="muted" style={{ margin: '2px 0 0 0', fontSize: '13px' }}>
                         {customer?.phone} · Booked: <strong>{bookingTimeDisplay}</strong>
                       </p>
@@ -134,7 +136,7 @@ export function OrdersPage() {
                       <span className="muted">Total:</span> <strong>{formatMoney(order.totalAmount)}</strong>
                     </div>
                     <div style={{ color: order.dueAmount > 0 ? '#b91c1c' : '#166534', fontWeight: 650 }}>
-                      {order.dueAmount > 0 ? `Due: ${formatMoney(order.dueAmount)}` : 'Paid in full'}
+                      {order.status === 'cancelled' ? 'Cancelled' : order.dueAmount > 0 ? `Due: ${formatMoney(order.dueAmount)}` : 'Paid in full'}
                     </div>
                   </div>
 
@@ -142,11 +144,13 @@ export function OrdersPage() {
                     <select
                       value={order.status}
                       className={`status-pill status-${order.status}`}
-                      onChange={(event) => changeStatus(order.id, event.target.value as typeof order.status)}
+                      disabled={order.status === 'cancelled'}
+                      onChange={(event) => changeStatus(order.id, event.target.value as 'pending' | 'ready' | 'delivered')}
                     >
                       <option value="pending">Pending</option>
                       <option value="ready">Ready</option>
                       <option value="delivered">Delivered</option>
+                      {order.status === 'cancelled' && <option value="cancelled">Cancelled</option>}
                     </select>
                   </div>
 
@@ -158,13 +162,15 @@ export function OrdersPage() {
                       <button
                         className="button whatsapp compact-btn"
                         onClick={() =>
-                          window.open(buildWhatsAppDeliveryUrl(customer, order, settings), '_blank', 'noopener,noreferrer')
+                          window.open(buildWhatsAppDeliveryUrl(customer, order, settings, orderItems), '_blank', 'noopener,noreferrer')
                         }
                       >
                         <MessageSquare size={15} /> WhatsApp
                       </button>
                     )}
-                    {order.dueAmount > 0 && (
+                    <Link className="button" to={`/orders/${order.id}/edit`}>Edit</Link>
+                    {order.status !== 'cancelled' && <button className="button" onClick={() => { if (window.confirm(`Cancel receipt #${order.orderNumber}? This will preserve it in records.`)) cancelOrder(order.id) }}>Cancel</button>}
+                    {order.dueAmount > 0 && order.status !== 'cancelled' && (
                       <button
                         className="button compact-pay"
                         onClick={() => {

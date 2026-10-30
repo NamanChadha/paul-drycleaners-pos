@@ -23,7 +23,7 @@ export function OrderQueueList({ orders }: { orders: Order[] }) {
 
   return (
     <div className="queue-list">
-      {orders.map((order) => {
+      {orders.filter((order) => order.status !== 'cancelled').map((order) => {
         const customer = customers.find((entry) => entry.id === order.customerId)
         const orderItems = items.filter((item) => item.orderId === order.id)
         if (!customer) return null
@@ -38,7 +38,8 @@ export function OrderQueueList({ orders }: { orders: Order[] }) {
             <div className="queue-header-info">
               <span className="order-number-badge">#{order.orderNumber}</span>
               <div>
-                <h3 style={{ margin: 0 }}>{customer.name}</h3>
+                <h3 style={{ margin: 0 }}>{customer.name && !customer.name.startsWith('Customer (') ? customer.name : customer.address || 'Walk-in Customer'}</h3>
+                {customer.name && !customer.name.startsWith('Customer (') && customer.address && <p className="muted" style={{ margin: '2px 0', fontSize: '12px' }}>{customer.address}</p>}
                 <p className="muted" style={{ margin: '2px 0 0 0', fontSize: '13px' }}>
                   {customer.phone} · Booked: <strong>{bookingTimeDisplay}</strong>
                 </p>
@@ -121,7 +122,7 @@ export function OrderQueueList({ orders }: { orders: Order[] }) {
                 <button
                   className="button whatsapp"
                   onClick={() =>
-                    window.open(buildWhatsAppDeliveryUrl(customer, order, settings), '_blank', 'noopener,noreferrer')
+                    window.open(buildWhatsAppDeliveryUrl(customer, order, settings, orderItems), '_blank', 'noopener,noreferrer')
                   }
                 >
                   Confirm Delivery

@@ -1,4 +1,5 @@
-export type OrderStatus = 'pending' | 'ready' | 'delivered'
+export type OrderStatus = 'pending' | 'ready' | 'delivered' | 'cancelled'
+export type GarmentCategory = "Men's" | "Women's" | 'Unisex'
 export type PaymentStatus = 'paid' | 'partial' | 'unpaid'
 export type UserRole = 'admin' | 'reception'
 
@@ -63,6 +64,7 @@ export interface Settings {
   serviceTypes: string[]
   garmentPrices: Record<string, number>
   garmentTypes: string[]
+  garmentCategories?: Record<string, GarmentCategory>
   quickAddItems: string[]
   nextOrderNumber: number
   receiptOffsets: {

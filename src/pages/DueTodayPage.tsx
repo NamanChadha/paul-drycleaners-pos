@@ -10,7 +10,7 @@ export function DueTodayPage() {
   const dueToday = useMemo(
     () =>
       orders
-        .filter((order) => order.deliveryDate <= today && order.status !== 'delivered')
+        .filter((order) => order.deliveryDate <= today && order.status !== 'delivered' && order.status !== 'cancelled')
         .sort((a, b) => a.deliveryDate.localeCompare(b.deliveryDate) || a.orderNumber - b.orderNumber),
     [orders, today],
   )

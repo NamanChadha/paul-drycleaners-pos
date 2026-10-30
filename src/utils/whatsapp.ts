@@ -49,20 +49,16 @@ export function buildWhatsAppBillUrl({
   return `https://wa.me/${phone}?text=${text}`
 }
 
-export function buildWhatsAppDeliveryUrl(customer: Customer, order: Order, settings: Settings) {
+export function buildWhatsAppDeliveryUrl(customer: Customer, order: Order, settings: Settings, items: Item[] = []) {
   const rawPhone = customer.phone.replace(/\D/g, '')
   const phone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone
-  const deliveredAt = order.deliveredAt ? new Date(order.deliveredAt) : new Date()
-  const deliveredDate = deliveredAt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-  const deliveredTime = deliveredAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-  const message = [
-    `Hello ${customer.name},`,
-    '',
-    `Your clothes from ${settings.shopName} (receipt #${order.orderNumber}) have been delivered.`,
-    `Delivery date: ${deliveredDate}`,
-    `Delivery time: ${deliveredTime}`,
-    '',
-    'Thank you.',
-  ].join('\n')
-  return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+  const delivered = items.filter((item) => item.isDelivered)
+  const pending = items.filter((item) => !item.isDelivered)
+  const greeting = customer.name && !customer.name.startsWith('Customer (') ? `Hello ${customer.name},` : 'Hello,'
+  const lines = [greeting, '', `${settings.shopName} receipt #${order.orderNumber}`, 'Delivery status:',
+    ...delivered.map((item) => `✓ ${item.quantity} × ${item.garmentType} (${item.serviceType}) — Delivered`),
+    ...pending.map((item) => `◷ ${item.quantity} × ${item.garmentType} (${item.serviceType}) — Pending`),
+    '', delivered.length && !pending.length ? 'All items have been delivered.' : `${delivered.length} of ${items.length} item entries delivered.`,
+    `Due: ${formatMoney(order.dueAmount)}`, '', 'Thank you.']
+  return `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`
 }

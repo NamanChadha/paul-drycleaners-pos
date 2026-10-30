@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { calculateDeliveryDate } from '../utils/date'
 import { formatMoney } from '../utils/money'
 import { useShopStore } from '../store/useShopStore'
@@ -15,17 +15,21 @@ type DraftItem = {
 
 export function NewOrderPage() {
   const navigate = useNavigate()
-  const { customers, settings, createOrder } = useShopStore()
+  const { orderId } = useParams()
+  const shop = useShopStore()
+  const { customers, settings, createOrder, updateOrder, orders } = shop
+  const storedItems = shop.items
   const getDefaultPrice = (garmentType: string) => settings.garmentPrices?.[garmentType] ?? 0
+  const calculateServicePrice = (garmentType: string, serviceType: string) => { const base = getDefaultPrice(garmentType); return serviceType.toLowerCase() === 'steam press' ? Math.ceil((base * 0.5) / 10) * 10 : base }
   const defaultService = settings.serviceTypes.includes('Dryclean') ? 'Dryclean' : settings.serviceTypes[0] ?? ''
 
   const makeItem = (garmentType?: string): DraftItem => {
-    const g = garmentType || settings.garmentTypes[0] || ''
+    const g = garmentType || ''
     return {
       garmentType: g,
       serviceType: defaultService,
       quantity: 1,
-      unitPrice: getDefaultPrice(g),
+      unitPrice: g ? calculateServicePrice(g, defaultService) : 0,
     }
   }
 
@@ -44,8 +48,26 @@ export function NewOrderPage() {
   )
   const [paidAmount, setPaidAmount] = useState(0)
   const [notes, setNotes] = useState('')
-  const [items, setItems] = useState<DraftItem[]>([makeItem()])
+  const [items, setItems] = useState<DraftItem[]>([])
+  const [itemSearch, setItemSearch] = useState('')
+  const [itemCategory, setItemCategory] = useState('All')
   const userInteractedWithItems = useRef(false)
+  const loadedOrderId = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!orderId || loadedOrderId.current === orderId) return
+    const order = orders.find((entry) => entry.id === orderId)
+    if (!order) return
+    loadedOrderId.current = orderId
+    const customer = customers.find((entry) => entry.id === order.customerId)
+    if (customer) {
+      const parsed = splitCustomerTitle(customer.name)
+      setTitle(parsed.title); setName(parsed.cleanName); setPhone(customer.phone); setAddress(customer.address); setSelectedCustomerId(customer.id)
+    }
+    setDeliveryDate(order.deliveryDate); setPaidAmount(order.paidAmount); setNotes(order.notes || '')
+    const existingItems = storedItems.filter((item) => item.orderId === orderId)
+    if (existingItems.length) setItems(existingItems.map(({ garmentType, serviceType, quantity, unitPrice }) => ({ garmentType, serviceType, quantity, unitPrice })))
+  }, [orderId, orders, customers, storedItems])
 
   // Refs for keyboard navigation
   const phoneRef = useRef<HTMLInputElement>(null)
@@ -155,29 +177,9 @@ export function NewOrderPage() {
 
   // Fast entry handler - clicking a chip ADDS the item!
   const handleQuickAdd = (garment: string) => {
-    const defaultGarment = settings.garmentTypes[0] ?? ''
-    const defaultPrice = getDefaultPrice(garment)
+    const defaultPrice = calculateServicePrice(garment, defaultService)
 
     setItems((current) => {
-      // If table only has 1 item and user hasn't touched anything, replace the initial placeholder
-      if (
-        !userInteractedWithItems.current &&
-        current.length === 1 &&
-        current[0].garmentType === defaultGarment &&
-        current[0].quantity === 1 &&
-        current[0].unitPrice === getDefaultPrice(defaultGarment)
-      ) {
-        userInteractedWithItems.current = true
-        return [
-          {
-            garmentType: garment,
-            serviceType: defaultService,
-            quantity: 1,
-            unitPrice: defaultPrice,
-          },
-        ]
-      }
-
       userInteractedWithItems.current = true
       return [
         ...current,
@@ -211,7 +213,7 @@ export function NewOrderPage() {
 
   const removeItem = (index: number) => {
     userInteractedWithItems.current = true
-    setItems((current) => (current.length === 1 ? [makeItem()] : current.filter((_, itemIndex) => itemIndex !== index)))
+    setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))
   }
 
   const nextOnEnter = (event: KeyboardEvent, next?: () => void) => {
@@ -229,26 +231,26 @@ export function NewOrderPage() {
     if (!canSubmit) return
 
     const combinedName = combineCustomerName(title, name)
-    const order = createOrder({
-      customer: {
-        id: selectedCustomerId || undefined,
-        name: combinedName,
-        phone,
-        address,
-      },
-      deliveryDate,
-      paidAmount,
-      notes,
-      items,
-    })
-    navigate(`/orders/${order.id}/print`, { state: { orderCreated: true } })
+    const customerInput = {
+      id: selectedCustomerId || undefined,
+      name: combinedName,
+      phone,
+      address,
+    }
+    if (orderId) {
+      updateOrder(orderId, { customer: customerInput, deliveryDate, notes, items })
+      navigate(`/orders/${orderId}/print`)
+    } else {
+      const order = createOrder({ customer: customerInput, deliveryDate, paidAmount, notes, items })
+      navigate(`/orders/${order.id}/print`, { state: { orderCreated: true } })
+    }
   }
 
   return (
     <section className="new-order-shell">
       <div className="new-order-main stack compact-stack">
         <header className="page-header">
-          <div><p className="eyebrow">Counter flow</p><h2>New order</h2></div>
+          <div><p className="eyebrow">Counter flow</p><h2>{orderId ? 'Edit receipt' : 'New order'}</h2></div>
         </header>
 
         <div className="card compact-card customer-card">
@@ -333,22 +335,7 @@ export function NewOrderPage() {
             <label className="field-with-suggestions">
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span>Name (optional)</span>
-                <span className="title-pills">
-                  <button
-                    type="button"
-                    className={`title-pill-btn ${title === 'Mr.' ? 'active' : ''}`}
-                    onClick={() => setTitle('Mr.')}
-                  >
-                    Mr.
-                  </button>
-                  <button
-                    type="button"
-                    className={`title-pill-btn ${title === 'Mrs.' ? 'active' : ''}`}
-                    onClick={() => setTitle('Mrs.')}
-                  >
-                    Mrs.
-                  </button>
-                </span>
+
               </span>
               <div className="name-input-group">
                 <select
@@ -421,13 +408,15 @@ export function NewOrderPage() {
                 ref={addressRef}
                 placeholder="Locality / house no."
                 value={address}
-                onChange={(event) => setAddress(event.target.value)}
+                list="customer-addresses"
+                onChange={(event) => { setAddress(event.target.value); const match = customers.find((c) => c.address.toLowerCase() === event.target.value.trim().toLowerCase()); if (match) selectCustomer(match) }}
                 onKeyDown={(event) => nextOnEnter(event, () => garmentRefs.current[0]?.focus())}
               />
+              <datalist id="customer-addresses">{customers.filter((c) => c.address).map((c) => <option key={c.id} value={c.address} />)}</datalist>
             </label>
 
             <label>Delivery date<input type="date" value={deliveryDate} onChange={(event) => setDeliveryDate(event.target.value)} /></label>
-            <label>Paid now<input type="number" value={paidAmount} onChange={(event) => setPaidAmount(Number(event.target.value))} /></label>
+            {!orderId && <label>Paid now<input type="number" min="0" value={paidAmount} onChange={(event) => setPaidAmount(Number(event.target.value))} /></label>}
             <label className="address-field">Notes<input value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
           </div>
 
@@ -468,18 +457,37 @@ export function NewOrderPage() {
               ))}
           </div>
 
+          <div className="garment-search-controls">
+            <input placeholder="Search garments to add..." value={itemSearch} onChange={(event) => setItemSearch(event.target.value)} />
+            <select value={itemCategory} onChange={(event) => setItemCategory(event.target.value)}><option>All</option><option>Men's</option><option>Women's</option><option>Unisex</option></select>
+          </div>
+          {itemSearch.trim() && (
+            <div className="garment-search-results">
+              {settings.garmentTypes
+                .filter((garment) => (itemCategory === 'All' || (settings.garmentCategories?.[garment] || 'Unisex') === itemCategory) && garment.toLowerCase().includes(itemSearch.trim().toLowerCase()))
+                .slice(0, 12)
+                .map((garment) => (
+                  <button type="button" key={garment} className="chip" onClick={() => { handleQuickAdd(garment); setItemSearch('') }}>
+                    + {garment} <span className="chip-price-badge">₹{getDefaultPrice(garment)}</span>
+                  </button>
+                ))}
+              {!settings.garmentTypes.some((garment) => (itemCategory === 'All' || (settings.garmentCategories?.[garment] || 'Unisex') === itemCategory) && garment.toLowerCase().includes(itemSearch.trim().toLowerCase())) && <small className="empty-state">No matching garments</small>}
+            </div>
+          )}
           <div className="item-table-head">
             <span>Garment</span><span>Service</span><span>Qty</span><span>Price</span><span>Total</span><span />
           </div>
 
+          {items.length === 0 && <p className="empty-state">No garments added yet. Search for a garment or use a quick-add button to add one.</p>}
           {items.map((item, index) => (
             <div key={index} className="fast-item-row">
               <select
                 ref={(node) => { garmentRefs.current[index] = node }}
                 value={item.garmentType}
-                onChange={(event) => updateItem(index, { garmentType: event.target.value, unitPrice: getDefaultPrice(event.target.value) })}
+                onChange={(event) => updateItem(index, { garmentType: event.target.value, unitPrice: calculateServicePrice(event.target.value, item.serviceType) })}
                 onKeyDown={(event) => nextOnEnter(event, () => serviceRefs.current[index]?.focus())}
               >
+                <option value="">Select garment</option>
                 {settings.garmentTypes.map((garment) => <option key={garment} value={garment}>{garment}</option>)}
               </select>
               <select
@@ -487,7 +495,7 @@ export function NewOrderPage() {
                 value={item.serviceType}
                 onChange={(event) => {
                   const serviceType = event.target.value
-                  updateItem(index, { serviceType })
+                  updateItem(index, { serviceType, unitPrice: calculateServicePrice(item.garmentType, serviceType) })
                 }}
                 onKeyDown={(event) => nextOnEnter(event, () => quantityRefs.current[index]?.focus())}
               >
@@ -520,16 +528,22 @@ export function NewOrderPage() {
         <p className="eyebrow">Order total</p>
         <strong>{formatMoney(total)}</strong>
         <button
+          type="button"
           className="button primary large"
           onClick={submit}
           disabled={!canSubmit}
           title={!hasCustomerDetail ? 'Please enter at least one: Name, Phone, or Address' : undefined}
         >
-          Save & print
+          {orderId ? 'Save changes' : 'Save & print'}
         </button>
         {!hasCustomerDetail && (
           <small style={{ color: '#b91c1c', fontSize: '12px' }}>
             Enter at least Name, Phone, or Address to save
+          </small>
+        )}
+        {hasCustomerDetail && items.length === 0 && (
+          <small style={{ color: '#b91c1c', fontSize: '12px' }}>
+            Add at least one garment before saving
           </small>
         )}
       </aside>

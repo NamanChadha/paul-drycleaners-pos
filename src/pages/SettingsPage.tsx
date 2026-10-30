@@ -59,6 +59,7 @@ export function SettingsPage() {
       serviceTypes,
       quickAddItems,
       garmentPrices,
+      garmentCategories: Object.fromEntries(garmentTypes.map((item) => [item, draft.garmentCategories?.[item] || 'Unisex'])),
     })
     setIsEditing(false)
   }
@@ -129,6 +130,7 @@ export function SettingsPage() {
         <label>Receipt top offset (mm)<input type="number" value={d.receiptOffsets.top} onChange={(e) => setD({ receiptOffsets: { ...d.receiptOffsets, top: Number(e.target.value) } })} /></label>
         <label>Receipt left offset (mm)<input type="number" value={d.receiptOffsets.left} onChange={(e) => setD({ receiptOffsets: { ...d.receiptOffsets, left: Number(e.target.value) } })} /></label>
         <label className="full">Garment types (comma-separated)<input value={ds.garmentTypes} onChange={(e) => setDs({ garmentTypes: e.target.value })} /></label>
+        <div className="full stack compact-stack"><strong>Item gender categories</strong><small>Assign each garment to Men's, Women's or Unisex. Existing items default to Unisex until categorized.</small>{d.garmentTypes.map((garment) => <label key={garment}>{garment}<select value={d.garmentCategories?.[garment] || 'Unisex'} onChange={(e) => setD({ garmentCategories: { ...d.garmentCategories, [garment]: e.target.value as "Men's" | "Women's" | 'Unisex' } })}><option>Men's</option><option>Women's</option><option>Unisex</option></select></label>)}</div>
         <label className="full">
           Quick Add items
           <input value={ds.quickAddItems} placeholder="e.g. Shirts, Pant, Suit 2pc., Saree" onChange={(e) => setDs({ quickAddItems: e.target.value })} />

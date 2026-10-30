@@ -6,15 +6,15 @@ import { formatMoney } from '../utils/money'
 export function DashboardPage() {
   const { orders, customers } = useShopStore()
   const today = todayIso()
-  const todayOrders = orders.filter((order) => order.receiptDate === today)
+  const todayOrders = orders.filter((order) => order.receiptDate === today && order.status !== 'cancelled')
   const revenueToday = todayOrders.reduce((sum, order) => sum + order.paidAmount, 0)
-  const pendingDeliveries = orders.filter((order) => order.status !== 'delivered').length
-  const dueToday = orders.filter((order) => order.deliveryDate <= today && order.status !== 'delivered').length
-  const pendingPayments = orders.filter((order) => order.dueAmount > 0).length
+  const pendingDeliveries = orders.filter((order) => order.status !== 'delivered' && order.status !== 'cancelled').length
+  const dueToday = orders.filter((order) => order.deliveryDate <= today && order.status !== 'delivered' && order.status !== 'cancelled').length
+  const pendingPayments = orders.filter((order) => order.dueAmount > 0 && order.status !== 'cancelled').length
   const deliveredOrders = orders.filter((order) => order.status === 'delivered').length
   const totalOutstanding = customers.reduce((sum, customer) => sum + customer.totalDue, 0)
   const frequentCustomers = customers
-    .map((customer) => ({ customer, receipts: orders.filter((order) => order.customerId === customer.id).length }))
+    .map((customer) => ({ customer, receipts: orders.filter((order) => order.customerId === customer.id && order.status !== 'cancelled').length }))
     .filter(({ receipts }) => receipts > 1)
     .sort((a, b) => b.receipts - a.receipts || b.customer.totalDue - a.customer.totalDue)
     .slice(0, 5)

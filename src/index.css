@@ -591,3 +591,87 @@ label { display: grid; gap: 8px; }
     display: none !important;
   }
 }
+
+
+/* Layout refinements for customer forms and garment search */
+.customer-create {
+  grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+}
+.customer-create-fields {
+  grid-template-columns: minmax(220px, 1.25fr) minmax(150px, .8fr) minmax(180px, 1fr) auto;
+}
+.customer-create-fields > div,
+.customer-edit-fields > label,
+.customer-edit-fields > div {
+  min-width: 0;
+}
+.customer-create-fields input,
+.customer-edit-fields input,
+.customer-edit-fields select,
+.customer-create-fields select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.customer-edit-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+}
+.customer-edit-fields .name-input-group {
+  min-width: 0;
+}
+.customer-edit-fields .name-input-group input {
+  flex: 1;
+  width: 1%;
+}
+.customer-create-fields .name-input-group input {
+  flex: 1;
+  width: 1%;
+}
+.garment-search-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 8px;
+}
+.garment-search-controls input,
+.garment-search-controls select {
+  min-width: 0;
+  width: 100%;
+}
+.garment-search-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 0 6px;
+}
+.compact-form-grid .name-input-group input {
+  min-width: 0;
+  width: 1%;
+  flex: 1;
+}
+.compact-form-grid .title-select {
+  width: 72px;
+}
+@media (max-width: 1100px) {
+  .customer-create {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .customer-create-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .customer-edit-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .garment-search-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(110px, 140px);
+  }
+}
+@media (max-width: 600px) {
+  .customer-create-fields,
+  .customer-edit-fields,
+  .garment-search-controls {
+    grid-template-columns: 1fr;
+  }
+}

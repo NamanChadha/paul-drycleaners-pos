@@ -37,7 +37,7 @@ export function CustomersPage() {
   }, [customers, query])
   const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId) ?? null
   const customerOrders = selectedCustomer
-    ? orders.filter((order) => order.customerId === selectedCustomer.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    ? orders.filter((order) => order.customerId === selectedCustomer.id && order.status !== 'cancelled').sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     : []
   const customerPayments = selectedCustomer ? payments.filter((payment) => payment.customerId === selectedCustomer.id) : []
   const unpaidOrders = customerOrders.filter((order) => order.dueAmount > 0)
@@ -46,7 +46,7 @@ export function CustomersPage() {
     setSelectedCustomerId(customerId)
     setIsEditing(false)
     setPaymentAmount('')
-    setCoveredOrderIds(orders.filter((order) => order.customerId === customerId && order.dueAmount > 0).map((order) => order.id))
+    setCoveredOrderIds(orders.filter((order) => order.customerId === customerId && order.dueAmount > 0 && order.status !== 'cancelled').map((order) => order.id))
   }
 
   const startEdit = () => {
@@ -110,22 +110,7 @@ export function CustomersPage() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
               <span style={{ fontSize: 12, color: '#64748b' }}>Name</span>
-              <span className="title-pills">
-                <button
-                  type="button"
-                  className={`title-pill-btn ${newTitle === 'Mr.' ? 'active' : ''}`}
-                  onClick={() => setNewTitle('Mr.')}
-                >
-                  Mr.
-                </button>
-                <button
-                  type="button"
-                  className={`title-pill-btn ${newTitle === 'Mrs.' ? 'active' : ''}`}
-                  onClick={() => setNewTitle('Mrs.')}
-                >
-                  Mrs.
-                </button>
-              </span>
+
             </div>
             <div className="name-input-group">
               <select
@@ -165,7 +150,7 @@ export function CustomersPage() {
               onKeyDown={(event) => { if (event.key === 'Enter') saveCustomer() }}
             />
           </div>
-          <button className="button primary" onClick={saveCustomer} disabled={!hasNewDetail}>
+          <button type="button" className="button primary" onClick={saveCustomer} disabled={!hasNewDetail}>
             Add customer
           </button>
         </div>
@@ -180,7 +165,7 @@ export function CustomersPage() {
           />
           <div className="customer-grid">
             {filtered.map((customer) => {
-              const receiptCount = orders.filter((order) => order.customerId === customer.id).length
+              const receiptCount = orders.filter((order) => order.customerId === customer.id && order.status !== 'cancelled').length
               return (
                 <button
                   key={customer.id}
@@ -310,7 +295,7 @@ export function CustomersPage() {
                     <option value="card">Card</option>
                     <option value="bank transfer">Bank transfer</option>
                   </select>
-                  <button className="button primary" onClick={savePayment}>
+                  <button type="button" className="button primary" onClick={savePayment}>
                     Save payment
                   </button>
                 </div>
