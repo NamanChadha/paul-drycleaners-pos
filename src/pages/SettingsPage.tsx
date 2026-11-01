@@ -127,8 +127,34 @@ export function SettingsPage() {
         <label>Delivery offset (days)<input type="number" value={d.deliveryOffsetDays} onChange={(e) => setD({ deliveryOffsetDays: Number(e.target.value) })} /></label>
         <label>Next order number<input type="number" min={1} max={10000} value={d.nextOrderNumber} onChange={(e) => setD({ nextOrderNumber: Math.min(10000, Math.max(1, Number(e.target.value))) })} /></label>
         <label>Sunday closed<input type="checkbox" checked={d.sundayClosed} onChange={(e) => setD({ sundayClosed: e.target.checked })} /></label>
-        <label>Receipt top offset (mm)<input type="number" value={d.receiptOffsets.top} onChange={(e) => setD({ receiptOffsets: { ...d.receiptOffsets, top: Number(e.target.value) } })} /></label>
-        <label>Receipt left offset (mm)<input type="number" value={d.receiptOffsets.left} onChange={(e) => setD({ receiptOffsets: { ...d.receiptOffsets, left: Number(e.target.value) } })} /></label>
+        <div className="full card" style={{ background: '#f8fafc', padding: 14 }}>
+          <p className="eyebrow" style={{ color: '#004b93', margin: 0 }}>Pre-printed Stationery Calibration</p>
+          <p style={{ fontSize: 13, color: '#475569', margin: '4px 0 10px 0' }}>
+            Fine-tune sheet alignment to match your printer tray. Individual field positions (Name, Address, Mobile, Dates, Items) are calibrated in <code>src/print/preprinted.css</code>.
+          </p>
+          <div className="form-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+            <label>
+              Receipt Global Top Offset (mm)
+              <input
+                type="number"
+                step="0.5"
+                value={d.receiptOffsets.top}
+                onChange={(e) => setD({ receiptOffsets: { ...d.receiptOffsets, top: Number(e.target.value) } })}
+              />
+              <small>Shifts all fields up (-) or down (+) on the pad.</small>
+            </label>
+            <label>
+              Receipt Global Left Offset (mm)
+              <input
+                type="number"
+                step="0.5"
+                value={d.receiptOffsets.left}
+                onChange={(e) => setD({ receiptOffsets: { ...d.receiptOffsets, left: Number(e.target.value) } })}
+              />
+              <small>Shifts all fields left (-) or right (+) on the pad.</small>
+            </label>
+          </div>
+        </div>
         <label className="full">Garment types (comma-separated)<input value={ds.garmentTypes} onChange={(e) => setDs({ garmentTypes: e.target.value })} /></label>
         <div className="full stack compact-stack"><strong>Item gender categories</strong><small>Assign each garment to Men's, Women's or Unisex. Existing items default to Unisex until categorized.</small>{d.garmentTypes.map((garment) => <label key={garment}>{garment}<select value={d.garmentCategories?.[garment] || 'Unisex'} onChange={(e) => setD({ garmentCategories: { ...d.garmentCategories, [garment]: e.target.value as "Men's" | "Women's" | 'Unisex' } })}><option>Men's</option><option>Women's</option><option>Unisex</option></select></label>)}</div>
         <label className="full">

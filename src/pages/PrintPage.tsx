@@ -1,8 +1,8 @@
 import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 import { useRef, useState } from 'react'
-import { useLocation, useParams } from 'react-router-dom'
-import { CheckCircle2, Printer, Download, MessageSquareCheck, CheckSquare, Square, Info } from 'lucide-react'
+import { useLocation, useParams, Link } from 'react-router-dom'
+import { CheckCircle2, Printer, Download, MessageSquareCheck, CheckSquare, Square, Info, Sliders } from 'lucide-react'
 import { useShopStore } from '../store/useShopStore'
 import { ReceiptPreview } from '../print/ReceiptPreview'
 import { formatDateTime } from '../utils/date'
@@ -11,6 +11,8 @@ import { buildWhatsAppBillUrl, buildWhatsAppDeliveryUrl } from '../utils/whatsap
 export function PrintPage() {
   const printInProgress = useRef(false)
   const [isPrinting, setIsPrinting] = useState(false)
+  const [printMode, setPrintMode] = useState<'preprinted' | 'full'>('preprinted')
+  const [showGuide, setShowGuide] = useState(true)
   const location = useLocation()
   const { orderId } = useParams()
   const { orders, customers, items, settings, toggleItemDelivery } = useShopStore()
@@ -20,8 +22,9 @@ export function PrintPage() {
   if (!order || !customer) return <p className="card">Order not found.</p>
 
   const savePdf = async () => {
-    // Use the screen visual receipt (full preview) for PDF export
-    const target = document.querySelector('.screen-only-receipt') as HTMLElement | null
+    const target = (printMode === 'preprinted'
+      ? document.querySelector('#receipt-print-area')
+      : document.querySelector('.screen-only-receipt')) as HTMLElement | null
     if (!target) return
     const canvas = await html2canvas(target, { scale: 2 })
     const pdf = new jsPDF({ unit: 'mm', format: 'a5', orientation: 'portrait' })
@@ -41,8 +44,11 @@ export function PrintPage() {
     if (printInProgress.current) return
     printInProgress.current = true
     setIsPrinting(true)
+    document.body.classList.remove('print-mode-preprinted', 'print-mode-full')
+    document.body.classList.add(printMode === 'preprinted' ? 'print-mode-preprinted' : 'print-mode-full')
     window.print()
     window.setTimeout(() => {
+      document.body.classList.remove('print-mode-preprinted', 'print-mode-full')
       printInProgress.current = false
       setIsPrinting(false)
     }, 750)
@@ -60,15 +66,15 @@ export function PrintPage() {
 
       <header className="page-header">
         <div>
-          <p className="eyebrow">A5 Laser Receipt</p>
+          <p className="eyebrow">A5 Receipt</p>
           <h2>Receipt #{order.orderNumber}</h2>
         </div>
         <div className="row">
           <button className="button primary" onClick={printReceipt} disabled={isPrinting}>
-            <Printer size={16} /> {isPrinting ? 'Preparing print…' : 'Print A5 Receipt'}
+            <Printer size={16} /> {isPrinting ? 'Preparing print…' : printMode === 'preprinted' ? 'Print on Pre-Printed Pad' : 'Print Full Receipt'}
           </button>
           <button className="button" onClick={savePdf}>
-            <Download size={16} /> Save PDF Preview
+            <Download size={16} /> Save PDF
           </button>
           <button className="button whatsapp" onClick={openWhatsApp}>
             <MessageSquareCheck size={16} /> WhatsApp Bill
@@ -76,13 +82,58 @@ export function PrintPage() {
         </div>
       </header>
 
+      {/* Mode Selector Bar */}
+      <div className="print-mode-selector-bar">
+        <div className="row" style={{ gap: 12 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>Receipt Paper:</span>
+          <div className="mode-selector-tabs">
+            <button
+              type="button"
+              className={`mode-tab-btn ${printMode === 'preprinted' ? 'active' : ''}`}
+              onClick={() => setPrintMode('preprinted')}
+            >
+              📄 Pre-printed Stationery Pad
+            </button>
+            <button
+              type="button"
+              className={`mode-tab-btn ${printMode === 'full' ? 'active' : ''}`}
+              onClick={() => setPrintMode('full')}
+            >
+              🖨️ Plain Paper (Full Design)
+            </button>
+          </div>
+        </div>
+
+        {printMode === 'preprinted' && (
+          <div className="row" style={{ gap: 16 }}>
+            <label className="stationery-toggle-label">
+              <input
+                type="checkbox"
+                checked={showGuide}
+                onChange={(e) => setShowGuide(e.target.checked)}
+              />
+              <span>Show pad outline in preview</span>
+            </label>
+            <Link to="/settings" className="button compact-btn" title="Adjust top and left print offsets">
+              <Sliders size={13} style={{ marginRight: 4 }} /> Calibrate Offsets
+            </Link>
+          </div>
+        )}
+      </div>
+
       {/* Print info banner */}
       <div className="print-form-tip card">
         <Info size={16} style={{ color: '#2563eb', flexShrink: 0, marginTop: 1 }} />
         <div>
-          <strong>A5 receipt format</strong>
+          <strong>
+            {printMode === 'preprinted'
+              ? 'Pre-printed Stationery Mode Active (A5 Paper)'
+              : 'Plain Paper Mode Active (A5 Paper)'}
+          </strong>
           <p className="muted" style={{ marginTop: 3 }}>
-            Select A5 paper and portrait orientation in the printer dialog. The complete receipt layout, including current item delivery markings, prints exactly as shown in the preview.
+            {printMode === 'preprinted'
+              ? 'Load the pre-printed Paul Drycleaners pad in your printer. Only the dynamic details (Name, Address, Mobile, Dates, Items & Total) will be printed directly into their respective boxes. Placement coordinates can be fine-tuned in src/print/preprinted.css.'
+              : 'Load blank A5 paper. The full receipt layout including logos, borders, headers, and item lines will be printed.'}
           </p>
         </div>
       </div>
@@ -154,7 +205,14 @@ export function PrintPage() {
 
       {/* A5 Portrait Sheet Preview */}
       <div className="a5-preview-container">
-        <ReceiptPreview customer={customer} order={order} items={orderItems} settings={settings} />
+        <ReceiptPreview
+          customer={customer}
+          order={order}
+          items={orderItems}
+          settings={settings}
+          mode={printMode}
+          showStationeryGuide={showGuide}
+        />
       </div>
     </section>
   )

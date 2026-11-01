@@ -1,3 +1,5 @@
+@import './print/preprinted.css';
+
 :root { font-family: Inter, system-ui, sans-serif; color: #171717; background: #f7f4ef; }
 * { box-sizing: border-box; }
 body { margin: 0; }
@@ -523,11 +525,11 @@ label { display: grid; gap: 8px; }
   .official-receipt { width: 100%; min-height: auto; padding: 10px; }
 }
 
-/* Screen: hide the old data-only overlay, show the full styled receipt. */
-.print-overlay-receipt { display: none; }
+/* Screen display defaults */
+.print-overlay-receipt { display: block; }
 .screen-only-receipt { display: block; }
 
-/* ── Print: render the live A5 preview exactly as shown on screen ── */
+/* ── Print: render A5 receipt for Pre-printed Stationery or Full Receipt ── */
 @page {
   size: A5 portrait;
   margin: 0mm;
@@ -538,7 +540,7 @@ label { display: grid; gap: 8px; }
     height: 210mm !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: #fff !important;
+    background: #ffffff !important;
     overflow: hidden !important;
   }
   #root {
@@ -550,14 +552,9 @@ label { display: grid; gap: 8px; }
   /* Hide every element on the page first */
   body * { visibility: hidden !important; }
 
-  /* Then reveal only the A5 preview container and everything inside it */
-  .a5-preview-container,
-  .a5-preview-container * {
-    visibility: visible !important;
-  }
-
-  /* Position the container to fill the whole A5 page */
+  /* Reveal container */
   .a5-preview-container {
+    visibility: visible !important;
     display: block !important;
     position: fixed !important;
     inset: 0 !important;
@@ -565,14 +562,51 @@ label { display: grid; gap: 8px; }
     height: 210mm !important;
     padding: 0 !important;
     margin: 0 !important;
-    background: #fff !important;
+    background: transparent !important;
     border: 0 !important;
     border-radius: 0 !important;
+    box-shadow: none !important;
   }
 
-  /* The receipt sheet itself */
-  .screen-only-receipt {
+  /* 1. Pre-printed stationery pad mode (default) */
+  body:not(.print-mode-full) .print-overlay-receipt,
+  body:not(.print-mode-full) .print-overlay-receipt *:not(.stationery-watermark-bg):not(.stationery-watermark-bg *) {
+    visibility: visible !important;
+  }
+  body:not(.print-mode-full) .stationery-watermark-bg,
+  body:not(.print-mode-full) .stationery-watermark-bg *,
+  body:not(.print-mode-full) .screen-only-receipt,
+  body:not(.print-mode-full) .screen-only-receipt * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body:not(.print-mode-full) .print-overlay-receipt {
     display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 148mm !important;
+    height: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* 2. Plain paper mode (full receipt layout) */
+  body.print-mode-full .screen-only-receipt,
+  body.print-mode-full .screen-only-receipt * {
+    visibility: visible !important;
+  }
+  body.print-mode-full .print-overlay-receipt,
+  body.print-mode-full .print-overlay-receipt * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body.print-mode-full .screen-only-receipt {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
     width: 148mm !important;
     min-height: 210mm !important;
     margin: 0 !important;
@@ -580,11 +614,10 @@ label { display: grid; gap: 8px; }
     box-shadow: none !important;
     border-radius: 0 !important;
   }
+  body.print-mode-full .receipt-border-frame {
+    min-height: 198mm !important;
+  }
 
-  .receipt-border-frame { min-height: 198mm !important; }
-
-  /* Ensure the old overlay and tag areas are hidden */
-  #receipt-print-area,
   #tag-print-area,
   .tag-grid,
   .tag-card {
